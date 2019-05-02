@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Register Book</title>
+  <link rel="stylesheet" href="js/jquery.mobile-1.4.5.css">
+  <script src="js/jquery.js"></script>
+  <script src="js/jquery.mobile-1.4.5.js"></script>
+  <script src="cordova.js"></script>
+  <script src="js/brain-0.6.3.js"></script>
+  <style>
+    #a {
+      background-color: red;
+      color: white;
+    }
+    #b {
+      background-color: blue;
+      color: white;
+      display: none;
+    }
+  </style>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      /*
+      var a = (120000 / 1000000)
+      var net = new brain.NeuralNetwork();
+      net.train([{
+        input: {
+          timer: 2000 / 1000000,
+          good: 15 / 15,
+        },
+        output: {
+          level: 1
+        }
+      }, {
+        input: {
+          timer: 120000 / 1000000,
+          good: 15 / 15,
+        },
+        output: {
+          level: 1
+        }
+      }, {
+        input: {
+          timer: 2000 / 1000000,
+          good: 0 / 15,
+        },
+        output: {
+          level: 0
+        }
+      }, {
+        input: {
+          timer: 700000 / 1000000,
+          good: 15 / 15,
+        },
+        output: {
+          level: 0
+        }
+      }], {
+        //Iterations
+        iterations: 1000000,
+        errorThresh: 0.0006,
+        log: true
+      });
+
+      const result = net.run({
+        timer: a,
+        good: (15 / 15)
+      });
+      console.log(result);
+      var a = (result.level) * 100;
+      console.log(a);
+      */
+      $(".next").click(function(){
+        alert($(this).text());
+      })
+    })
+  </script>
+</head>
+
+<body>
+
+  <button id="a" class="next">yolo</button>
+  <br>
+  <button id="b" class="next">yaaaay</button>
+</body>
+
+</html>

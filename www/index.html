@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Register Book</title>
+  <link rel="stylesheet" href="js/jquery.mobile-1.4.5.css">
+  <script src="js/jquery.js"></script>
+  <script src="js/jquery.mobile-1.4.5.js"></script>
+  <script src="cordova.js"></script>
+  <script src="js/brain-0.6.3.js"></script>
+  <style>
+    .maa {
+      height: 160px;
+      width: inherit;
+    }
+  </style>
+  <script type="text/javascript">
+    document.addEventListener("deviceready", onDeviceReady, false);
+    var username;
+    var password;
+    var pretest;
+    var time;
+    var anstime = 0;
+    var pretestans;
+    var pretestlevel = 0;
+    var pretestgood = 0;
+    var studentlevel;
+    //DETERMINE QUESTIONS
+    var pretestprev = 0;
+    var pretestcur = 1;
+    var numberques = 0;
+
+    function onDeviceReady() {
+      //creates the database and size
+      db = openDatabase("Aitest", "1.0", "Database for Ai", 2 * 1024 * 1024);
+      //ALLOWS execution of all functions
+      db.transaction(function(tx) {
+        //CREATE TABLE STUDENT
+        tx.executeSql('CREATE TABLE IF NOT EXISTS stud(name text, password text, level int,pretest text)');
+        tx.executeSql('INSERT INTO stud(name,password,level,pretest) VALUES ("Neeschal Kissoon", "youknowyou", 0, "false")');
+        //CREATE TABLE QUESTIONS
+        tx.executeSql(
+          'CREATE TABLE IF NOT EXISTS ques(id int, q1 int,q2 int,q3 int,q4 int,q5 int,q6 int,q7 int,q8 int,q9 int,q10 int,q11 int,q12 int,q13 int,q14 int,q15 int,q16 int,q17 int,q18 int,q19 int,q20 int,q21 int,q22 int,q23 int,q24 int,q25 int,q26 int,q27 int,q28 int,q29 int,q30 int,q31 int,q32 int,q33 int,q34 int,q35 int,q36 int,q37 int,q38 int,q39 int,q40 int)'
+        );
+        //RETRIEVING VALUES FOR USER
+        tx.executeSql('SELECT * FROM stud WHERE rowid=1', [], function(tx, result) {
+          //console helps to locate result in array
+          //console.log(result);
+          username = result.rows[0].name;
+          password = result.rows[0].password;
+          pretest = result.rows[0].pretest;
+        });
+      });
+    }
+
+    $(document).ready(function() {
+      timer();
+      //AUTHENTICATE USER AND PRETEST AT THE SAME TIME
+      $("#Kloginbtn").click(function() {
+        if (($("#klarge").val() == "") || ($("#klarge1").val() == "")) {
+          alert("INVALID!");
+        } else if (($("#klarge").val() == username) || ($("#klarge1").val() == password)) {
+          if (pretest == "false") {
+
+          } else {
+            $.mobile.changePage("#a1", {
+              reverse: false,
+              transition: "pop"
+            });
+            //TIMER
+            timer();
+          }
+        } else {
+          alert("INVALID!");
+        }
+      });
+
+      //GENERIC BUTTON FOR PRETEST
+      $(".pretest").click(function() {
+        stoptimer();
+        pretestassess();
+        pretestques(pretestlevel);
+      });
+    });
+
+    //FUNCTION TIMER
+    function timer() {
+      time = setInterval(count, 1000);
+    }
+
+    function count() {
+      anstime += 1000;
+    }
+
+    function stoptimer() {
+      alert(anstime);
+      clearInterval(time);
+      anstime = 0;
+    }
+    //Ai LOGIC
+    function preassesment() {
+      var net = new brain.NeuralNetwork();
+      net.train([{
+        input: {
+          timer: 1000 / 1000000,
+          good: 15 / 15,
+        },
+        output: {
+          level: 1
+        }
+      }, {
+        input: {
+          timer: 120000 / 1000000,
+          good: 15 / 15,
+        },
+        output: {
+          level: 1
+        }
+      }, {
+        input: {
+          timer: 2000 / 1000000,
+          good: 0 / 15,
+        },
+        output: {
+          level: 0
+        }
+      }, {
+        input: {
+          timer: 700000 / 1000000,
+          good: 15 / 15,
+        },
+        output: {
+          level: 0
+        }
+      }], {
+        //Iterations
+        iterations: 1000000,
+        errorThresh: 0.0006,
+        log: true
+      });
+
+      const result = net.run({
+        timer: anstime,
+        good: (pretestgood / 15)
+      });
+      console.log(result);
+      pretestlevel = (result.level) * 100;
+      console.log(pretestlevel);
+    }
+
+    //CHECK ANSWER
+    function pretestassess() {
+      var x = "#" + pretestcur + " input[name='radio']:checked";
+      pretestans = $(x).val();
+      if (pretestans == "good") {
+        pretestgood++;
+        alert(pretestgood);
+      }
+      numberques++;
+    }
+
+    //SELECT PRETEST QUESTIONS
+    function pretestques(level) {
+      pretestcur = pretestprev
+      if (numberques != 15) {
+        if ((level >= 0) && (level < 40)) {
+          //BEGINNER LEVEL
+          do {
+            pretestcur = Math.floor((Math.random() * 20) + 1);
+          }
+          while (pretestcur == pretestprev);
+          //PRETEST Ai
+          preassesment();
+          var a = "#a" + pretestcur;
+          $.mobile.changePage(a, {
+            reverse: false,
+            transition: "slide"
+          });
+          //TIMER
+          timer();
+          //INTERMEDIATE LEVEL
+        } else if ((level >= 40) && (level < 70)) {
+          do {
+            pretestcur = Math.floor((Math.random() * 20) + 15);
+          }
+          while (pretestcur == pretestprev);
+          //PRETEST Ai
+          preassesment();
+          var a = "#a" + pretestcur;
+          $.mobile.changePage(a, {
+            reverse: false,
+            transition: "slide"
+          });
+          //TIMER
+          timer();
+          //ADVANCED LEVEL
+        } else if ((level >= 70) && (level < 100)) {
+          do {
+            pretestcur = Math.floor((Math.random() * 15) + 25);
+          }
+          while (pretestcur == pretestprev);
+          //PRETEST Ai
+          preassesment();
+          var a = "#a" + pretestcur;
+          $.mobile.changePage(a, {
+            reverse: false,
+            transition: "slide"
+          });
+          //TIMER
+          timer();
+        }
+      } else {
+        //Change to score page or homepage
+        $.mobile.changePage("#Khome", {
+          reverse: false,
+          transition: "slide"
+        });
+        var x = "Your score is: "+pretestgood+" & level is: "+ pretestlevel;
+        $("#uiw").text(x);
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div data-role="page" id="a1">
+    <div data-role="main" class="ui-content">
+      <form>
+        <fieldset data-role="controlgroup" id="1">
+          <h4>1) I haven`t got ......</h4>
+          <label><input name="radio" id="r11" type="radio" value="good"> A. no brothers or sisters </label>
+          <label><input name="radio" id="r12" type="radio" value="bad"> B. brothers or sisters </label>
+          <label><input name="radio" id="r13" type="radio" value="bad"> C. any brothers or sisters </label>
+          <label><input name="radio" id="r14" type="radio" value="bad">D. some brothers and sisters</label>
+        </fieldset>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a2">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="2">
+          <h4>2) Every year,he goes to the coast for his holidays .... </h4>
+          <label><input name="radio" id="r15" type="radio" value="good" checked="checked"> A. in train</label>
+          <label><input name="radio" id="r16" type="radio" value="bad"> B. on train</label>
+          <label><input name="radio" id="r17" type="radio" value="bad"> C. by train</label>
+          <label><input name="radio" id="r18" type="radio" value="bad">D. with train</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a3">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="3">
+          <h4>3) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a4">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="4">
+          <h4>4) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a5">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="5">
+          <h4>5) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a6">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="6">
+          <h4>6) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a7">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="7">
+          <h4>7) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a8">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="8">
+          <h4>8) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a9">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="9">
+          <h4>9) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a10">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="10">
+          <h4>10) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a11">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="11">
+          <h4>11) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a12">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="12">
+          <h4>12) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a13">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="13">
+          <h4>13) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a14">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="14">
+          <h4>14) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a15">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="15">
+          <h4>15) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a16">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="16">
+          <h4>16) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a17">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="17">
+          <h4>17) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a18">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="18">
+          <h4>18) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a19">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="19">
+          <h4>19) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a20">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="20">
+          <h4>20) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a21">
+    <div data-role="main" class="ui-content">
+      <form>
+        <fieldset data-role="controlgroup" id="21">
+          <h4>21) I haven`t got ......</h4>
+          <label><input name="radio" id="r11" type="radio" value="good"> A. no brothers or sisters </label>
+          <label><input name="radio" id="r12" type="radio" value="bad"> B. brothers or sisters </label>
+          <label><input name="radio" id="r13" type="radio" value="bad"> C. any brothers or sisters </label>
+          <label><input name="radio" id="r14" type="radio" value="bad">D. some brothers and sisters</label>
+        </fieldset>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a22">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="22">
+          <h4>22) Every year,he goes to the coast for his holidays .... </h4>
+          <label><input name="radio" id="r15" type="radio" value="good" checked="checked"> A. in train</label>
+          <label><input name="radio" id="r16" type="radio" value="bad"> B. on train</label>
+          <label><input name="radio" id="r17" type="radio" value="bad"> C. by train</label>
+          <label><input name="radio" id="r18" type="radio" value="bad">D. with train</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a23">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="23">
+          <h4>23) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a24">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="24">
+          <h4>24) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a25">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="25">
+          <h4>25) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a26">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="26">
+          <h4>26) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a27">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="27">
+          <h4>27) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a28">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="28">
+          <h4>28) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a29">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="29">
+          <h4>29) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a30">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="30">
+          <h4>30) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a31">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="11">
+          <h4>31) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a32">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="32">
+          <h4>32) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a33">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="33">
+          <h4>33) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a34">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="34">
+          <h4>34) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a35">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="35">
+          <h4>35) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a36">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="36">
+          <h4>36) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a37">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="37">
+          <h4>37) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a38">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="38">
+          <h4>38) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a39">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="39">
+          <h4>39) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <div data-role="page" id="a40">
+    <div data-role="main" class="ui-content">
+      <form>
+        <div data-role="controlgroup" id="40">
+          <h4>40) There is .......... of beer left from the party </h4>
+          <label><input name="radio" id="r19" type="radio" value="good" checked="checked"> A. little</label>
+          <label><input name="radio" id="r20" type="radio" value="bad"> B. much</label>
+          <label><input name="radio" id="r21" type="radio" value="bad"> C. a lot</label>
+          <label><input name="radio" id="r22" type="radio" value="bad">D. Too</label>
+        </div>
+      </form>
+      <button class="pretest">SUBMIT</button>
+    </div>
+  </div>
+  <!-- HOMEPAGE -->
+  <div data-role="page" id="Khome">
+    <div data-role="main" class="ui-content" id="master">
+      <h3 id="uiw"></h3>
+    </div>
+    <!-- FOOTER NAV -->
+    <div data-role="footer">
+      <div data-role="navbar">
+        <ul>
+          <li><a href="#home" data-icon="book" class="botnav"></a></li>
+          <li><a id="Kstats1" data-icon="bar-chart-o" class="botnav"></a></li>
+          <li><a id="Kuser1" data-icon="user" class="botnav"></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- MAIN LOGIN PAGE -->
+  <div data-role="page" id="Klogin">
+    <div data-role="main" class="ui-content">
+      <div id="Kcontainter">
+        <input id="klarge" type="text">
+        <input id="klarge1" type="password">
+        <button id="Kloginbtn" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+          LOGIN
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

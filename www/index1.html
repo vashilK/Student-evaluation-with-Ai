@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Register Book</title>
+  <link rel="stylesheet" href="js/jquery.mobile-1.4.5.css">
+  <script src="js/jquery.js"></script>
+  <script src="js/jquery.mobile-1.4.5.js"></script>
+  <script src="cordova.js"></script>
+  <style>
+
+  </style>
+  <script type="text/javascript">
+    document.addEventListener("deviceready", onDeviceReady, false);
+    var a = "Keshra Ketan";
+    var b = 3;
+    var db;
+
+    function onDeviceReady() {
+      //creates the database and size
+      db = openDatabase("Aitest", "1.0", "Database for Ai", 2 * 1024 * 1024);
+      //ALLOWS execution of all functions
+      db.transaction(function(tx) {
+        tx.executeSql('CREATE TABLE IF NOT EXISTS foo(id int, name text)');
+        tx.executeSql('INSERT INTO foo(id,name) VALUES (?,?)', [b, a]);
+        //RETRIEVING VALUES
+        tx.executeSql('SELECT name FROM foo WHERE id=1',[],function(tx,result){
+            //console helps to locate result in array
+            //console.log(result);
+            alert(result.rows[0].name);
+        });
+      });
+    }
+  </script>
+</head>
+
+<body>
+
+  <div data-role="page" id="pageone" data-theme="a">
+    <div data-role="header">
+      <h1>Insert Book Details</h1>
+    </div>
+    <div data-role="main" class="ui-content">
+      <form method="post" onSubmit="return submitForm()">
+        <label class="ui-hidden-accessible">title</label><input name="title" type="text" placeholder="title" />
+        <label class="ui-hidden-accessible">author</label><input name="author" type="text" placeholder="author" />
+        <input type="submit" value="submit" />
+      </form>
+    </div>
+    <div data-role="footer">
+      <h1>Working with SQLite</h1>
+    </div>
+  </div>
+  <div data-role="page" id="pagetwo">
+    <div data-role="header">
+      <h1>Book Details</h1>
+    </div>
+    <div data-role="main" class="ui-content">
+      <div id="output">
+        <ul data-role="listview" id="resultList"></ul>
+      </div>
+    </div>
+    <div data-role="footer">
+      <h1>Working with SQLite</h1>
+    </div>
+  </div>
+</body>
+
+</html>
